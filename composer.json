@@ -1,0 +1,12 @@
+{
+    "name": "lobster-php/number",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Lobster\\Number\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">= 7.2.0"
+    }
+}
