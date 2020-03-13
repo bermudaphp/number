@@ -23,17 +23,17 @@ class Number {
      * @param int|float|string $number
      * @return Number
      */
-    public static function new($number) : self {
+    public static function new($number = 0) : self {
         return new static($number);
     }
 
     /**
      * Numeric constructor.
      * @param int|float|string $int
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
     public function __construct($int = 0) {
-        $this->normalize($int);
+        $this->value = $this->normalize($int);
     }
 
     /**
@@ -175,7 +175,6 @@ class Number {
     /**
      * @param $var
      * @return int|float
-     * @throws InvalidArgumentException
      */
     private function normalize($var) {
 
@@ -195,7 +194,7 @@ class Number {
             return octdec($var);
         }
 
-        InvalidArgumentException::notValid($var);
+        return 0;
     }
 
     /**
