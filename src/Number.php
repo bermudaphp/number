@@ -12,7 +12,7 @@ use function Bermuda\is_oct;
  * Class Number
  * @package Bermuda\Number
  */
-class Number
+final class Number
 {
     /**
      * @var int|float
