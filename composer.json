@@ -1,13 +1,13 @@
 {
-    "name": "lobster-php/number",
+    "name": "bermudaphp/number",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Lobster\\Number\\": "src/"
+            "Bermuda\\Number\\": "src/"
         }
     },
     "require": {
-        "php": ">= 7.2.0",
-        "lobster-php/helpers": "^1.1"
+        "php": ">= 7.2",
+        "bermudaphp/helpers": "^1.0"
     }
 }
