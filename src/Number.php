@@ -1,12 +1,9 @@
 <?php
 
-
 namespace Bermuda\Number;
-
 
 use function Bermuda\is_hex;
 use function Bermuda\is_oct;
-
 
 /**
  * Class Number
