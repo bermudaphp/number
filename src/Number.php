@@ -5,10 +5,6 @@ namespace Bermuda\Number;
 use function Bermuda\is_hex;
 use function Bermuda\is_oct;
 
-/**
- * Class Number
- * @package Bermuda\Number
- */
 final class Number
 {
     /**
@@ -50,13 +46,11 @@ final class Number
      */
     public function division($numeric, bool $module = false): self 
     {
-        if(($numeric = $this->normalize($numeric)) == 0)
-        {
+        if (($numeric = $this->normalize($numeric)) == 0) {
             throw new \ArithmeticError('Division by zero');
         }
 
-        if($module)
-        {
+        if ($module) {
             return new self(($this->toNumber() % $numeric));
         }
 
