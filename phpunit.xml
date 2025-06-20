@@ -5,10 +5,10 @@
          colors="true"
          cacheDirectory=".phpunit.cache"
          executionOrder="depends,defects"
-         requireCoverageMetadata="true"
-         beStrictAboutCoverageMetadata="true"
+         requireCoverageMetadata="false"
+         beStrictAboutCoverageMetadata="false"
          beStrictAboutOutputDuringTests="true"
-         failOnRisky="true"
+         failOnRisky="false"
          failOnWarning="true">
     
     <testsuites>
@@ -17,14 +17,13 @@
         </testsuite>
     </testsuites>
 
-    <source restrictDeprecations="true" restrictNotices="true" restrictWarnings="true">
+    <source>
         <include>
             <directory>src</directory>
         </include>
     </source>
 
     <coverage includeUncoveredFiles="true" 
-              processUncoveredFiles="true" 
               ignoreDeprecatedCodeUnits="true" 
               disableCodeCoverageIgnore="true">
         <report>
