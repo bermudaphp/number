@@ -4,6 +4,11 @@
 
 Библиотека для работы с числами в PHP, предоставляющий API для математических операций, конвертации и проверки типов.
 
+[![PHP Version](https://img.shields.io/badge/php-%5E8.4-blue)](https://php.net)
+[![Tests](https://github.com/bermudaphp/number/workflows/Tests/badge.svg)](https://github.com/bermudaphp/number/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
 ## 📦 Установка
 
 ```bash
