@@ -1,13 +1,44 @@
 {
     "name": "bermudaphp/number",
+    "description": "A comprehensive PHP library for advanced number operations and mathematical computations",
+    "type": "library",
+    "keywords": [
+        "math",
+        "mathematics",
+        "number",
+        "statistics",
+        "numeric",
+        "calculation",
+        "arithmetic",
+        "base-conversion",
+        "immutable",
+        "bermuda"
+    ],
     "license": "MIT",
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
     "autoload": {
         "psr-4": {
-            "Bermuda\\Number\\": "src/"
+            "Bermuda\\Stdlib\\": "src/"
         }
     },
-    "require": {
-        "php": ">= 7.2",
-        "bermudaphp/helpers": "^1.0"
-    }
+    "autoload-dev": {
+        "psr-4": {
+            "Bermuda\\Stdlib\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
