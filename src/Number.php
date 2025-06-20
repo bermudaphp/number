@@ -30,7 +30,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public static function from(mixed $value): self
     {
-        return new self(self::normalize($value));
+        return new self(NumberConverter::normalize($value));
     }
 
     /**
@@ -38,7 +38,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public static function checkInteger(mixed $value): bool
     {
-        return is_int($value) || (is_float($value) && floor($value) === $value);
+        return is_int($value);
     }
 
     /**
@@ -55,27 +55,6 @@ final readonly class Number implements JsonSerializable, \Stringable
     public static function checkNaN(mixed $value): bool
     {
         return is_float($value) && is_nan($value);
-    }
-
-    /**
-     * Parses string as float
-     */
-    public static function parseFloat(string $value): float
-    {
-        return (float)$value;
-    }
-
-    /**
-     * Parses string as int with specified radix
-     */
-    public static function parseInt(string $value, int $radix = 10): int
-    {
-        return match ($radix) {
-            2 => bindec($value),
-            8 => octdec($value),
-            16 => hexdec($value),
-            default => (int)$value
-        };
     }
 
     /**
@@ -498,166 +477,6 @@ final readonly class Number implements JsonSerializable, \Stringable
     }
 
     /**
-     * Checks if a string represents a hexadecimal number
-     * Requires 0x or 0X prefix
-     */
-    public static function isHex(mixed $value): bool
-    {
-        if (!is_string($value) || $value === '') {
-            return false;
-        }
-
-        // Only with 0x/0X prefix
-        if (str_starts_with(strtolower($value), '0x')) {
-            $hex = substr($value, 2);
-            return $hex !== '' && ctype_xdigit($hex);
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if a string represents an octal number
-     * Accepts traditional (0755) and modern (0o755) notation
-     */
-    public static function isOctal(mixed $value): bool
-    {
-        // Must be a non-empty string
-        if (!is_string($value) || $value === '') {
-            return false;
-        }
-
-        // Modern octal notation: 0o755 or 0O755
-        if (str_starts_with($value, '0o') || str_starts_with($value, '0O')) {
-            $oct = substr($value, 2);
-            return $oct !== '' && preg_match('/^[0-7]+$/', $oct) === 1;
-        }
-
-        // Traditional octal notation: 0755 (starts with 0 and length > 1)
-        if (str_starts_with($value, '0') && strlen($value) > 1) {
-            $oct = substr($value, 1); // remove leading 0
-            return $oct !== '' && preg_match('/^[0-7]+$/', $oct) === 1;
-        }
-
-        // Strings without prefix are treated as decimal numbers
-        return false;
-    }
-
-    /**
-     * Checks if a string represents a binary number
-     * Requires 0b or 0B prefix
-     */
-    public static function isBinary(mixed $value): bool
-    {
-        if (!is_string($value) || $value === '') {
-            return false;
-        }
-
-        // Only with 0b/0B prefix
-        if (str_starts_with(strtolower($value), '0b')) {
-            $bin = substr($value, 2);
-            return $bin !== '' && preg_match('/^[01]+$/', $bin) === 1;
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if a string represents a number in a specific base
-     */
-    public static function isBase(mixed $value, int $radix): bool
-    {
-        if (!is_string($value)) {
-            return false;
-        }
-
-        if ($radix < 2 || $radix > 36) {
-            throw new InvalidArgumentException('Radix must be between 2 and 36');
-        }
-
-        if ($value === '') {
-            return false;
-        }
-
-        // Build valid characters for this base
-        $validChars = [];
-
-        // Add digits 0-9 as needed
-        for ($i = 0; $i < min(10, $radix); $i++) {
-            $validChars[] = (string)$i;
-        }
-
-        // Add letters A-Z as needed for bases > 10
-        if ($radix > 10) {
-            for ($i = 10; $i < $radix; $i++) {
-                $letter = chr(ord('A') + $i - 10);
-                $validChars[] = $letter;
-                $validChars[] = strtolower($letter);
-            }
-        }
-
-        // Check if all characters in value are valid for this base
-        $valueChars = str_split(strtoupper($value));
-        $validCharsUpper = array_map('strtoupper', $validChars);
-
-        return array_all($valueChars, fn($char) => in_array($char, $validCharsUpper, true));
-
-    }
-
-    /**
-     * Converts a string from any base to decimal
-     * Auto-detects base from prefixes when base parameter is null
-     */
-    public static function convertBase(string $value, ?int $fromBase = null): self
-    {
-        if ($value === '') {
-            throw new InvalidArgumentException('Empty string cannot be converted');
-        }
-
-        // Auto-detect base if not specified
-        if ($fromBase === null) {
-            // Priority order: HEX -> BINARY -> OCTAL -> DECIMAL
-            if (self::isHex($value)) {
-                return new self(hexdec($value));
-            }
-
-            if (self::isBinary($value)) {
-                if (str_starts_with(strtolower($value), '0b')) {
-                    return new self(bindec(substr($value, 2)));
-                }
-            }
-
-            if (self::isOctal($value)) {
-                // Handle different octal formats
-                if (str_starts_with(strtolower($value), '0o')) {
-                    return new self(octdec(substr($value, 2)));
-                } elseif (str_starts_with($value, '0') && strlen($value) > 1) {
-                    return new self(octdec(substr($value, 1)));
-                }
-            }
-
-            // Default to decimal
-            if (is_numeric($value)) {
-                return new self($value + 0);
-            }
-
-            throw new InvalidArgumentException('Cannot auto-detect base for value: ' . $value);
-        }
-
-        // Validate base
-        if ($fromBase < 2 || $fromBase > 36) {
-            throw new InvalidArgumentException('Base must be between 2 and 36');
-        }
-
-        // Validate value for the specified base
-        if (!self::isBase($value, $fromBase)) {
-            throw new InvalidArgumentException("Value '$value' is not valid for base $fromBase");
-        }
-
-        return new self((int)base_convert($value, $fromBase, 10));
-    }
-
-    /**
      * Format a number with a thousand separators and decimal places
      */
     public static function formatNumber(
@@ -686,7 +505,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function mod(int|float|self $divisor): self
     {
-        $divisorValue = self::normalize($divisor);
+        $divisorValue = self::extractValue($divisor);
         if ($divisorValue == 0) {
             throw new ArithmeticError('Division by zero');
         }
@@ -698,7 +517,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function divide(int|float|self $divisor): self
     {
-        $divisorValue = self::normalize($divisor);
+        $divisorValue = self::extractValue($divisor);
         if ($divisorValue == 0) {
             throw new ArithmeticError('Division by zero');
         }
@@ -710,7 +529,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function integerDivide(int|float|self $divisor): self
     {
-        $divisorValue = self::normalize($divisor);
+        $divisorValue = self::extractValue($divisor);
         if ($divisorValue == 0) {
             throw new ArithmeticError('Division by zero');
         }
@@ -722,7 +541,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function percent(int|float|self $percentage): self
     {
-        return new self($this->value / 100 * self::normalize($percentage));
+        return new self((float) $this->value / 100 * self::extractValue($percentage));
     }
 
     /**
@@ -730,11 +549,11 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function percentOf(int|float|self $total): self
     {
-        $totalValue = self::normalize($total);
+        $totalValue = self::extractValue($total);
         if ($totalValue == 0) {
             throw new ArithmeticError('Division by zero');
         }
-        return new self($this->value / $totalValue * 100);
+        return new self((float) $this->value / $totalValue * 100);
     }
 
     /**
@@ -742,7 +561,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function multiply(int|float|self $multiplier): self
     {
-        return new self($this->value * self::normalize($multiplier));
+        return new self($this->value * self::extractValue($multiplier));
     }
 
     /**
@@ -750,7 +569,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function add(int|float|self $addend): self
     {
-        return new self($this->value + self::normalize($addend));
+        return new self($this->value + self::extractValue($addend));
     }
 
     /**
@@ -758,7 +577,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function subtract(int|float|self $subtrahend): self
     {
-        return new self($this->value - self::normalize($subtrahend));
+        return new self($this->value - self::extractValue($subtrahend));
     }
 
     /**
@@ -913,7 +732,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function max(int|float|self $other): self
     {
-        return new self(max($this->value, self::normalize($other)));
+        return new self(max($this->value, self::extractValue($other)));
     }
 
     /**
@@ -921,7 +740,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function min(int|float|self $other): self
     {
-        return new self(min($this->value, self::normalize($other)));
+        return new self(min($this->value, self::extractValue($other)));
     }
 
     /**
@@ -929,8 +748,8 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function clamp(int|float|self $min, int|float|self $max): self
     {
-        $minValue = self::normalize($min);
-        $maxValue = self::normalize($max);
+        $minValue = self::extractValue($min);
+        $maxValue = self::extractValue($max);
         return new self(max($minValue, min($maxValue, $this->value)));
     }
 
@@ -939,7 +758,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function equals(int|float|self $other, bool $strict = false): bool
     {
-        $otherValue = self::normalize($other);
+        $otherValue = self::extractValue($other);
         return $strict ? $this->value === $otherValue : $this->value == $otherValue;
     }
 
@@ -956,7 +775,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function compare(int|float|self $other): int
     {
-        return $this->value <=> self::normalize($other);
+        return $this->value <=> self::extractValue($other);
     }
 
     /**
@@ -964,7 +783,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function greaterThan(int|float|self $other): bool
     {
-        return $this->value > self::normalize($other);
+        return $this->value > self::extractValue($other);
     }
 
     /**
@@ -972,7 +791,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function greaterThanOrEqual(int|float|self $other): bool
     {
-        return $this->value >= self::normalize($other);
+        return $this->value >= self::extractValue($other);
     }
 
     /**
@@ -980,7 +799,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function lessThan(int|float|self $other): bool
     {
-        return $this->value < self::normalize($other);
+        return $this->value < self::extractValue($other);
     }
 
     /**
@@ -988,7 +807,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function lessThanOrEqual(int|float|self $other): bool
     {
-        return $this->value <= self::normalize($other);
+        return $this->value <= self::extractValue($other);
     }
 
     /**
@@ -996,7 +815,7 @@ final readonly class Number implements JsonSerializable, \Stringable
      */
     public function isInteger(): bool
     {
-        return is_int($this->value) || (is_float($this->value) && floor($this->value) === $this->value);
+        return is_int($this->value);
     }
 
     /**
@@ -1189,59 +1008,10 @@ final readonly class Number implements JsonSerializable, \Stringable
     }
 
     /**
-     * Normalizes input value to numeric type
-     * Handles special number formats and type conversion
+     * Extracts numeric value from Number instance or primitive
      */
-    private static function normalize(mixed $value): int|float
+    private static function extractValue(int|float|self $value): int|float
     {
-        if ($value instanceof self) {
-            return $value->value;
-        }
-
-        if (is_string($value)) {
-            // Check for special number formats first (with prefixes)
-            if (self::isHex($value)) {
-                return hexdec($value);
-            }
-
-            if (self::isOctal($value)) {
-                // Handle different octal formats
-                if (str_starts_with(strtolower($value), '0o')) {
-                    return octdec(substr($value, 2));
-                } elseif (str_starts_with($value, '0') && strlen($value) > 1) {
-                    return octdec(substr($value, 1));
-                }
-            }
-
-            if (self::isBinary($value)) {
-                if (str_starts_with(strtolower($value), '0b')) {
-                    return bindec(substr($value, 2));
-                }
-            }
-
-            // Check if it's a valid decimal number
-            if (is_numeric($value)) {
-                return $value + 0;
-            }
-
-            // Strings with letters without proper prefix are invalid
-            if (preg_match('/[a-zA-Z]/', $value)) {
-                throw new InvalidArgumentException('Invalid number format: ' . $value);
-            }
-        }
-
-        if (is_numeric($value)) {
-            return $value + 0;
-        }
-
-        if (is_bool($value)) {
-            return (int)$value;
-        }
-
-        if (is_null($value)) {
-            return 0;
-        }
-
-        throw new InvalidArgumentException('Cannot normalize value to number: ' . gettype($value));
+        return $value instanceof self ? $value->value : $value;
     }
 }
