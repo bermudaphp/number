@@ -1,19 +1,20 @@
-# Number Class - Математические операции в PHP
+# Bermuda Number
 
 **🌍 [English](README.en.md) | Русский**
 
-Класс для работы с числами в PHP, предоставляющий API для математических операций, конвертации и проверки типов.
+Библиотека для работы с числами в PHP, предоставляющий API для математических операций, конвертации и проверки типов.
 
 ## 📦 Установка
 
 ```bash
-composer require bermudafunk/number
+composer require bermudaphp/number
 ```
 
 ## 🎯 Быстрый старт
 
 ```php
 use Bermuda\Stdlib\Number;
+use Bermuda\Stdlib\NumberConverter;
 
 // Создание
 $num = Number::from(42);
@@ -35,6 +36,14 @@ echo $num->log2()->value; // 4
 $price = Number::from(100);
 $tax = $price->percent(20); // 20% от 100 = 20
 $discount = Number::from(80)->percentOf(100); // 80% от 100
+
+// NumberConverter - безопасная конвертация
+$safe = NumberConverter::convertValue('123'); // 123 (int)
+$safe = NumberConverter::convertValue('hello'); // 'hello' (string)
+
+// NumberConverter - строгая конвертация
+$strict = NumberConverter::convertToNumber('123'); // 123 (int)
+// NumberConverter::convertToNumber('hello'); // InvalidArgumentException
 ```
 
 ## 📚 Документация
@@ -54,6 +63,33 @@ Number::from('0xFF');       // hex -> 255
 Number::from('0755');       // octal -> 493
 Number::from('0b1010');     // binary -> 10
 Number::from('1e3');        // scientific -> 1000
+```
+
+### NumberConverter - утилиты конвертации
+
+```php
+use Bermuda\Stdlib\NumberConverter;
+
+// Безопасная конвертация - возвращает оригинал если не число
+$result = NumberConverter::convertValue('123');    // 123 (int)
+$result = NumberConverter::convertValue('45.67');  // 45.67 (float)
+$result = NumberConverter::convertValue('0xFF');   // 255 (int)
+$result = NumberConverter::convertValue('hello');  // 'hello' (string)
+$result = NumberConverter::convertValue('');       // '' (string)
+
+// Строгая конвертация - выбрасывает исключение для некорректных данных
+$number = NumberConverter::convertToNumber('123');    // 123 (int)
+$number = NumberConverter::convertToNumber('45.67');  // 45.67 (float)
+$number = NumberConverter::convertToNumber('0xFF');   // 255 (int)
+
+// Исключения для невалидных данных
+try {
+    NumberConverter::convertToNumber('hello');     // InvalidArgumentException
+    NumberConverter::convertToNumber('');          // InvalidArgumentException
+    NumberConverter::convertToNumber(' 123 ');     // InvalidArgumentException
+} catch (InvalidArgumentException $e) {
+    echo $e->getMessage(); // Детальное описание ошибки
+}
 ```
 
 ### Арифметические операции
@@ -204,9 +240,16 @@ Number::range(5, 1, -1);     // [5, 4, 3, 2, 1]
 
 ```php
 try {
+    // Number исключения
     Number::from('invalid');    // InvalidArgumentException
     Number::from(10)->divide(0); // ArithmeticError
     Number::factorial(-1);       // InvalidArgumentException
+    
+    // NumberConverter исключения
+    NumberConverter::convertToNumber('hello');     // InvalidArgumentException
+    NumberConverter::convertToNumber('123abc');    // InvalidArgumentException
+    NumberConverter::convertToNumber(' 123 ');     // InvalidArgumentException
+    
 } catch (InvalidArgumentException $e) {
     // Неверный формат входных данных
 } catch (ArithmeticError $e) {
